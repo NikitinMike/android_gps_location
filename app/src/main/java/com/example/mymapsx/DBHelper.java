@@ -9,12 +9,14 @@ import android.util.Log;
 
 class DBHelper extends SQLiteOpenHelper {
 
+    public static final String myDB = "myDBMap";
+    private static final int dbVersion = 26;
     final String LOG_TAG = "myDBLogs";
-    final String mytable = "mytable2";
+    final String mytable = "myTable";
     SQLiteDatabase db;
 
     boolean getDBRecord(double latitude,double longitude){
-        if(db.isOpen()){
+//        if(db.isOpen()){
             Cursor c = db.rawQuery("SELECT id,datetime FROM "+mytable+" WHERE "
                     +"latitude = "+latitude+" AND " +"longitude = "+longitude, null);
             if (c.moveToFirst()){
@@ -23,17 +25,18 @@ class DBHelper extends SQLiteOpenHelper {
                     long id = c.getLong(0);
                     long time = c.getLong(1);
                     // Do something Here with values
+//                    Log.d(LOG_TAG, "row: ID = " + id+" "+time);
                 } while(c.moveToNext());
                 return true;
             }
             c.close();
-        }
+//        }
         return false;
     }
 
     long saveDBRecord(long time,double latitude,double longitude) {
-        if(!db.isOpen())return 0;
-        if(getDBRecord(latitude,longitude)) return 0;
+//        if(!db.isOpen())return 0;
+        if(getDBRecord(latitude,longitude)) return 0L;
         // создаем объект для данных
         ContentValues cv = new ContentValues();
 //        cv.put("name", "name");
@@ -47,9 +50,9 @@ class DBHelper extends SQLiteOpenHelper {
         return rowID;
     }
 
-    public DBHelper(Context context,String name) {
+    public DBHelper(Context context) {
         // конструктор суперкласса
-        super(context, name, null, 1);
+        super(context, myDB, null, dbVersion);
         // подключаемся к БД
         db = getWritableDatabase();
 //        clearDBData();
@@ -58,7 +61,7 @@ class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         Log.d(LOG_TAG, "--- onCreate database ---");
-        db.execSQL("DROP TABLE IF EXISTS "+mytable);
+//        db.execSQL("DROP TABLE IF EXISTS "+mytable);
         // создаем таблицу с полями
         db.execSQL("CREATE TABLE "+mytable+" ("
                 + "id integer primary key autoincrement,"
@@ -75,6 +78,7 @@ class DBHelper extends SQLiteOpenHelper {
     }
 
     void clearDBData() {
+        db.execSQL("DROP TABLE IF EXISTS "+mytable);
         Log.d(LOG_TAG, "--- Clear mytable: ---");
         // удаляем все записи
         int clearCount = db.delete(mytable, null, null);
@@ -99,9 +103,9 @@ class DBHelper extends SQLiteOpenHelper {
                 // получаем значения по номерам столбцов и пишем все в лог
                 Log.d(LOG_TAG,
                         "ID = " + c.getInt(idColIndex)
-                                +", time = " + c.getString(datetimeColIndex)
-                                +", latitude = " + c.getString(latitudeColIndex)
-                                +", longitude = " + c.getString(longitudeColIndex)
+                                +", time = " + c.getLong(datetimeColIndex)
+                                +", latitude = " + c.getDouble(latitudeColIndex)
+                                +", longitude = " + c.getDouble(longitudeColIndex)
 //                        ", name = " + c.getString(nameColIndex) +
 //                        ", email = " + c.getString(emailColIndex)
                 );

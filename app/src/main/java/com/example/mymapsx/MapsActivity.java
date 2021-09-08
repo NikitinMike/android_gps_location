@@ -9,6 +9,8 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Window;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
@@ -42,24 +44,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     static final ArrayList<LatLng> locationPoints = new ArrayList<>();
     int points = 1000;
     int scale = 10000000;
-    int PRECISION = 1;
+//    int PRECISION = 1;
     long startDateTime = 0;
     long skipCounter = 0;
     public static final String PREFS_NAME = "MyMapPrefs";
     public static final String PREFS_LOC = "locations";
-    public static final String myDB = "myMapsDB";
     int n = 0;
 //    SupportMapFragment mapFragment;
-    LatLng base;
+//    LatLng base;
+    MarkerOptions markerOptions; // = setMarker(10);
 
     static Window window;
     static Timer timer;
-//    DBHelper dbHelper;
+    DBHelper dbHelper;
 
     @Override
     protected void onResume() {
         restorePrefs();
         super.onResume();
+//        freshListView();
     }
 
     @Override
@@ -70,19 +73,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     protected void onStart() {
+        markerOptions = setMarker(10);
         super.onStart();
-        this.setTitle(MyLocationListener.getLocation());
+//        this.setTitle(MyLocationListener.getLocation());
+        dbHelper.getDBData();
 //        freshListView();
-//        dbHelper.getDBData();
     }
 
     void restorePrefs(){
         //restore preferences
         SharedPreferences settings = this.getSharedPreferences(PREFS_NAME, 0);
+        locations.clear();
         locations.addAll(settings.getStringSet(PREFS_LOC, new HashSet(locations)));
 //        points = locations.size(); System.out.println(points);
 //        Log.d(LOG_TAG,"====================================================================");
 //        System.out.println(locations);
+        locationPoints.clear();
         for (String s : locations) locationPoints.add(getPoint(s));
     }
 
@@ -106,7 +112,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         startDateTime = new Date().getTime();
 
-//        dbHelper = new DBHelper(this,myDB);
+        dbHelper = new DBHelper(this);
 //        dbHelper.clearDBData();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -117,14 +123,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         points = locationPoints.size();
         locationPoints.sort(this::compare);
 
-        Location location = MyLocationListener.imHere;
-        base = new LatLng(location.getLatitude(), location.getLongitude());
-        Log.i(LOG_TAG, base.toString());
+//        Location location = MyLocationListener.imHere;
+//        base = new LatLng(location.getLatitude(), location.getLongitude());
+//        Log.i(LOG_TAG, base.toString());
 
         // выполняем задачу MyTimerTask, описание которой будет ниже:
         window = this.getWindow();
         timer = new Timer();
         timer.schedule(new MyTimerTask(), 10000, 10000);
+    }
+
+    private void freshListView() {
+        ListView positions = findViewById(R.id.map);
+        ArrayAdapter<String> adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, locations.toArray());
+        // используем адаптер данных
+        positions.setAdapter(adapter);
     }
 
     int compare(LatLng b, LatLng a) {
@@ -163,7 +176,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     void refreshMap() {
         if (skipCounter == 0) {
             //        PolylineOptions line = new PolylineOptions();
-            MarkerOptions markerOptions = setMarker(10);
             //        line.width(4f).color(R.color.indigo_900);
             //        LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder();
             for (LatLng point : locationPoints) {
@@ -184,15 +196,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(new MarkerOptions().position(me).title("It's Me"));
     }
 
+    Double getDouble(String s){
+        return Double.parseDouble(Objects.requireNonNull(s).replace(",", "."));
+    }
+
     LatLng getPoint(String o) {
         final Pattern pattern = Pattern.compile("(\\d+,\\d+);(\\d+,\\d+)");
         Matcher matcher = pattern.matcher(o);
-        if (matcher.find()) {
-            return new LatLng(
-                Float.parseFloat(Objects.requireNonNull(matcher.group(1)).replace(",", ".")),
-                Float.parseFloat(Objects.requireNonNull(matcher.group(2)).replace(",", "."))
-            );
-        }
+        if (matcher.find())
+            return new LatLng(getDouble(matcher.group(1)),getDouble(matcher.group(2)));
         return null;
     }
 
@@ -214,14 +226,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         public void run() {
             // Отображаем информацию в текстовом поле count:
             runOnUiThread(() -> {
-                window.setTitle(new Date().toString());
                 String text = MyLocationListener.getLocation();
+//                Log.i(LOG_TAG, text);
                 locations.add(text);
                 LatLng p = getPoint(text);
-                locationPoints.add(p);
-                Log.i(LOG_TAG, p.toString()+":"+locationPoints.size());
+//                Log.i(LOG_TAG, p.toString());
+                long time = new Date().getTime();
+//                window.setTitle(time.toString());
 //                locationPoints.forEach(lp->Log.i(LOG_TAG, lp.toString()));
-//                dbHelper.saveDBRecord(new Date().getTime(),p.latitude*PRECISION,p.longitude*PRECISION);
+                if(dbHelper.saveDBRecord(time,p.latitude,p.longitude)>0L)
+                    locationPoints.add(p);
+                Log.i(LOG_TAG, p.toString()+":"+locationPoints.size());
 //                System.out.println((new Date().getTime()-start)/1000+" "+locationPoints.size()+" "+text);
 //                freshListView();
                 if ((++skipCounter % 10) == 0) refreshMap();
