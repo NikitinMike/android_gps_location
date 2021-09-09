@@ -7,6 +7,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
+
+import java.util.ArrayList;
+
 class DBHelper extends SQLiteOpenHelper {
 
     public static final String myDB = "myDBMap";
@@ -85,7 +89,7 @@ class DBHelper extends SQLiteOpenHelper {
         Log.d(LOG_TAG, "deleted rows count = " + clearCount);
     }
 
-    void getDBData() {
+    void getDBData(ArrayList<LatLng> locationPoints) {
         // делаем запрос всех данных из таблицы mytable, получаем Cursor
         Cursor c = db.query(mytable, null, null, null, null, null, null);
         // ставим позицию курсора на первую строку выборки
@@ -102,13 +106,14 @@ class DBHelper extends SQLiteOpenHelper {
             do {
                 // получаем значения по номерам столбцов и пишем все в лог
                 Log.d(LOG_TAG,
-                        "ID = " + c.getInt(idColIndex)
-                                +", time = " + c.getLong(datetimeColIndex)
-                                +", latitude = " + c.getDouble(latitudeColIndex)
-                                +", longitude = " + c.getDouble(longitudeColIndex)
+                "ID = " + c.getInt(idColIndex)
+                        +", time = " + c.getLong(datetimeColIndex)
+                        +", latitude = " + c.getDouble(latitudeColIndex)
+                        +", longitude = " + c.getDouble(longitudeColIndex)
 //                        ", name = " + c.getString(nameColIndex) +
 //                        ", email = " + c.getString(emailColIndex)
                 );
+                locationPoints.add(new LatLng(c.getDouble(latitudeColIndex),c.getDouble(longitudeColIndex)));
                 // переход на следующую строку
                 // а если следующей нет (текущая - последняя), то false - выходим из цикла
             } while (c.moveToNext());
