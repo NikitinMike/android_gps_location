@@ -73,7 +73,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         markerOptions = setMarker(10);
         super.onStart();
 //        this.setTitle(MyLocationListener.getLocation());
-        dbHelper.getDBData(locationPoints);
+//        dbHelper.getDBData(locationPoints);
 //        freshListView();
     }
 
@@ -88,7 +88,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         locationPoints.clear();
         dbHelper.getDBData(locationPoints);
         for (String s : locations)
-            if(locationPoints.indexOf(getPoint(s))<0)
+            if(!locationPoints.contains(getPoint(s)))
                 locationPoints.add(getPoint(s));
     }
 
@@ -103,9 +103,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        MyLocationListener.SetUpLocationListener(this);
-
         super.onCreate(savedInstanceState);
+        MyLocationListener.SetUpLocationListener(this);
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -117,9 +116,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        Objects.requireNonNull(mapFragment).getMapAsync(this);
 
-        restorePrefs();
+//        restorePrefs();
         points = locationPoints.size();
         locationPoints.sort(this::compare);
 
@@ -222,15 +221,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 locations.add(text);
                 LatLng p = getPoint(text);
 //                Log.i(LOG_TAG, p.toString());
-                long time = new Date().getTime();
+                Date date = new Date();
+                long time = date.getTime();
 //                window.setTitle(time.toString());
 //                locationPoints.forEach(lp->Log.i(LOG_TAG, lp.toString()));
                 if (dbHelper.saveDBRecord(time, p.latitude, p.longitude) > 0L)
                     locationPoints.add(p);
-                Log.i(LOG_TAG, p.toString() + ":" + locationPoints.size());
+                Log.i(LOG_TAG, date.toString()+" "+ text+ ":" + locationPoints.size());
 //                System.out.println((new Date().getTime()-start)/1000+" "+locationPoints.size()+" "+text);
 //                freshListView();
-                if ((++skipCounter % 100) == 0) refreshMap();
+                if ((++skipCounter % 10) == 0) refreshMap();
             });
         }
     }

@@ -10,6 +10,7 @@ import android.util.Log;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 class DBHelper extends SQLiteOpenHelper {
 
@@ -107,7 +108,7 @@ class DBHelper extends SQLiteOpenHelper {
                 // получаем значения по номерам столбцов и пишем все в лог
                 Log.d(LOG_TAG,
                 "ID = " + c.getInt(idColIndex)
-                        +", time = " + c.getLong(datetimeColIndex)
+                        +", time = " + new Date(c.getLong(datetimeColIndex)).toString()
                         +", latitude = " + c.getDouble(latitudeColIndex)
                         +", longitude = " + c.getDouble(longitudeColIndex)
 //                        ", name = " + c.getString(nameColIndex) +
